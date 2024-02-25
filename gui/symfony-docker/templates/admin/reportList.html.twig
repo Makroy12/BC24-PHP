@@ -1,0 +1,22 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello StaticController!{% endblock %}
+
+{% block body %}
+   
+
+    {% for reportElement in report %}
+        <h1 style='text-align:center'>
+        {{ reportElement.resource.ResourceName }}
+
+
+        {{ reportElement.description }}
+        <a href="{{ path('app_admin_checkReport', {'id': reportElement.id }) }}">check report</a>
+        </h1>
+        <hr>
+
+    {% endfor %}
+
+
+
+{% endblock %}

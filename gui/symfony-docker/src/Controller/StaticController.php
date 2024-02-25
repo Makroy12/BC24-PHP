@@ -2,9 +2,13 @@
 
 namespace App\Controller;
 
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use App\Entity\Resource;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
 
 class StaticController extends AbstractController
 {
@@ -16,7 +20,7 @@ class StaticController extends AbstractController
         ]);
     }
 
-    #[Route('/about', name: 'app_about')]
+    #[Route('/about', name: 'app_static_about')]
     public function about(): Response
     {
         return $this->render('static/about.html.twig', [
@@ -33,11 +37,11 @@ class StaticController extends AbstractController
     }
 
     #[Route('/recent', name: 'app_recent')]
-    public function recentReport(): Response
+    public function recentReport(ManagerRegistry $doctrine): Response
     {
-        return $this->render('static/recent.html.twig', [
-            'controller_name' => 'StaticController',
-        ]);
+        $repository = $doctrine->getRepository(Resource::class);
+        $resourcesC = $repository->findLastContaminatedResources();
+        return $this->render('static/recent.html.twig', ['resourcesC' => $resourcesC]);
     }
 
     #[Route('/consommateur', name: 'app_consommateur')]
@@ -70,5 +74,12 @@ class StaticController extends AbstractController
         return $this->render('static/equarisseur.html.twig', [
             'controller_name' => 'StaticController',
         ]);
+    }
+
+    #[Route('/logoutProcess', name: 'app_logoutProcess')]
+    public function logoutProcess(): RedirectResponse
+    {   
+        $this->addFlash('success', 'Vous êtes déconnecté(e) !');
+        return $this->redirectToRoute('app_index');
     }
 }

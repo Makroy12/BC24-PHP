@@ -6,127 +6,178 @@ use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-class User
+#[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $FirstName = null;
+    #[ORM\Column(length: 180, unique: true)]
+    private ?string $email = null;
+
+    #[ORM\Column]
+    private array $roles = [];
+
+    /**
+     * @var string The hashed password
+     */
+    #[ORM\Column]
+    private ?string $password = null;
 
     #[ORM\Column(length: 255)]
-    private ?string $LastName = null;
+    private ?string $firstname = null;
 
     #[ORM\Column(length: 255)]
-    private ?string $Email = null;
+    private ?string $lastname = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $Password = null;
-
-    #[ORM\Column(length: 255)]
-    private ?string $UserCategory = null;
-
-    #[ORM\OneToMany(mappedBy: 'IdUser', targetEntity: Historic::class)]
-    private Collection $historics;
+    #[ORM\OneToMany(mappedBy: 'User', targetEntity: Report::class)]
+    private Collection $reports;
 
     public function __construct()
     {
-        $this->historics = new ArrayCollection();
+        $this->reports = new ArrayCollection();
     }
+
+    // #[ORM\Column(type: 'boolean')]
+    // private $isVerified = false;
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getFirstName(): ?string
-    {
-        return $this->FirstName;
-    }
-
-    public function setFirstName(string $FirstName): static
-    {
-        $this->FirstName = $FirstName;
-
-        return $this;
-    }
-
-    public function getLastName(): ?string
-    {
-        return $this->LastName;
-    }
-
-    public function setLastName(string $LastName): static
-    {
-        $this->LastName = $LastName;
-
-        return $this;
-    }
-
     public function getEmail(): ?string
     {
-        return $this->Email;
+        return $this->email;
     }
 
-    public function setEmail(string $Email): static
+    public function setEmail(string $email): static
     {
-        $this->Email = $Email;
-
-        return $this;
-    }
-
-    public function getPassword(): ?string
-    {
-        return $this->Password;
-    }
-
-    public function setPassword(string $Password): static
-    {
-        $this->Password = $Password;
-
-        return $this;
-    }
-
-    public function getUserCategory(): ?string
-    {
-        return $this->UserCategory;
-    }
-
-    public function setUserCategory(string $UserCategory): static
-    {
-        $this->UserCategory = $UserCategory;
+        $this->email = $email;
 
         return $this;
     }
 
     /**
-     * @return Collection<int, Historic>
+     * A visual identifier that represents this user.
+     *
+     * @see UserInterface
      */
-    public function getHistorics(): Collection
+    public function getUserIdentifier(): string
     {
-        return $this->historics;
+        return (string) $this->email;
     }
 
-    public function addHistoric(Historic $historic): static
+    /**
+     * @see UserInterface
+     */
+    public function getRoles(): array
     {
-        if (!$this->historics->contains($historic)) {
-            $this->historics->add($historic);
-            $historic->setIdUser($this);
+        $roles = $this->roles;
+        // guarantee every user at least has ROLE_USER
+        $roles[] = 'ROLE_USER';
+
+        return array_unique($roles);
+    }
+
+    public function setRoles(array $roles): static
+    {
+        $this->roles = $roles;
+
+        return $this;
+    }
+
+    /**
+     * @see PasswordAuthenticatedUserInterface
+     */
+    public function getPassword(): string
+    {
+        return $this->password;
+    }
+
+    public function setPassword(string $password): static
+    {
+        $this->password = $password;
+
+        return $this;
+    }
+
+    /**
+     * @see UserInterface
+     */
+    public function eraseCredentials(): void
+    {
+        // If you store any temporary, sensitive data on the user, clear it here
+        // $this->plainPassword = null;
+    }
+
+    public function getFirstname(): ?string
+    {
+        return $this->firstname;
+    }
+
+    public function setFirstname(string $firstname): static
+    {
+        $this->firstname = $firstname;
+
+        return $this;
+    }
+
+    public function getLastname(): ?string
+    {
+        return $this->lastname;
+    }
+
+    public function setLastname(string $lastname): static
+    {
+        $this->lastname = $lastname;
+
+        return $this;
+    }
+
+    // public function isVerified(): bool
+    // {
+    //     return $this->isVerified;
+    // }
+
+    // public function setIsVerified(bool $isVerified): static
+    // {
+    //     $this->isVerified = $isVerified;
+
+    //     return $this;
+    // }
+
+    /**
+     * @return Collection<int, Report>
+     */
+    public function getReports(): Collection
+    {
+        return $this->reports;
+    }
+
+    public function addReport(Report $report): static
+    {
+        if (!$this->reports->contains($report)) {
+            $this->reports->add($report);
+            $report->setUser($this);
         }
 
         return $this;
     }
 
-    public function removeHistoric(Historic $historic): static
+    public function removeReport(Report $report): static
     {
-        if ($this->historics->removeElement($historic)) {
+        if ($this->reports->removeElement($report)) {
             // set the owning side to null (unless already changed)
-            if ($historic->getIdUser() === $this) {
-                $historic->setIdUser(null);
+            if ($report->getUser() === $this) {
+                $report->setUser(null);
             }
         }
 
